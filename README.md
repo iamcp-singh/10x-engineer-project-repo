@@ -50,9 +50,6 @@ cd 10x-engineer-project-repo
 python -m venv .venv
 source .venv/bin/activate
 
-# Windows activation alternative
-.venv\Scripts\activate
-
 cd backend
 pip install -r requirements.txt
 pytest tests/ -v
