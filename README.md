@@ -20,37 +20,42 @@ PromptLab is an internal tool for AI engineers to **store, organize, and manage 
 
 ### The Current Situation
 
-The previous developer left us with a *partially working* backend. The core structure is there, but:
+The backend is functional. Four known bugs have been fixed and `PATCH` support has been added. The core structure is in place:
 
-- There are **several bugs** that need fixing
 - Some **features are incomplete**
-- The **documentation is minimal** (you'll fix that)
-- There are **no tests** worth mentioning
-- **No CI/CD pipeline** exists
+- The **documentation is minimal** (you'll improve that)
+- **Tests are present** and cover basic functionality
+- **No CI/CD pipeline** exists yet
 - **No frontend** has been built yet
 
 Your job over the next 4 weeks is to transform this into a **production-ready, full-stack application**.
 
 ---
 
-## Quick Start
+### Quick Start
 
 ### Prerequisites
 
 - Python 3.10+
-- Node.js 18+ (for Week 4)
 - Git
 
 ### Run Locally
 
 ```bash
 # Clone the repo
-git clone <your-repo-url>
-cd promptlab
+git clone https://github.com/iamcp-singh/10x-engineer-project-repo.git
+cd 10x-engineer-project-repo
 
-# Set up backend
+# Create and activate a Python virtual environment (macOS / Linux)
+python -m venv .venv
+source .venv/bin/activate
+
+# Windows activation alternative
+.venv\Scripts\activate
+
 cd backend
 pip install -r requirements.txt
+pytest tests/ -v
 python main.py
 ```
 
@@ -61,6 +66,7 @@ API docs at: http://localhost:8000/docs
 ### Run Tests
 
 ```bash
+# From the repository root or inside `backend` with the venv activated
 cd backend
 pytest tests/ -v
 ```
@@ -70,7 +76,7 @@ pytest tests/ -v
 ## Project Structure
 
 ```
-promptlab/
+10x-engineer-project-repo/
 ├── README.md                    # You are here
 ├── PROJECT_BRIEF.md             # Your assignment details
 ├── GRADING_RUBRIC.md            # How you'll be graded
@@ -78,13 +84,13 @@ promptlab/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py
-│   │   ├── api.py              # FastAPI routes (has bugs!)
+│   │   ├── api.py              # FastAPI routes
 │   │   ├── models.py           # Pydantic models
 │   │   ├── storage.py          # In-memory storage
 │   │   └── utils.py            # Helper functions
 │   ├── tests/
 │   │   ├── __init__.py
-│   │   ├── test_api.py         # Basic tests
+│   │   ├── test_api.py         # API tests
 │   │   └── conftest.py         # Test fixtures
 │   ├── main.py                 # Entry point
 │   └── requirements.txt
@@ -129,20 +135,21 @@ The goal is to learn how to build *better* software *faster* with AI. Don't be a
 
 ---
 
-## API Endpoints (Current)
+## API Endpoints
 
-| Method | Endpoint | Description | Status |
-|--------|----------|-------------|--------|
-| GET | `/health` | Health check | ✅ Works |
-| GET | `/prompts` | List all prompts | ⚠️ Has issues |
-| GET | `/prompts/{id}` | Get single prompt | ❌ Bug |
-| POST | `/prompts` | Create prompt | ✅ Works |
-| PUT | `/prompts/{id}` | Update prompt | ⚠️ Has issues |
-| DELETE | `/prompts/{id}` | Delete prompt | ✅ Works |
-| GET | `/collections` | List collections | ✅ Works |
-| GET | `/collections/{id}` | Get collection | ✅ Works |
-| POST | `/collections` | Create collection | ✅ Works |
-| DELETE | `/collections/{id}` | Delete collection | ❌ Bug |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/prompts` | List all prompts |
+| GET | `/prompts/{id}` | Get single prompt |
+| POST | `/prompts` | Create prompt |
+| PUT | `/prompts/{id}` | Update prompt |
+| PATCH | `/prompts/{id}` | Partially update prompt |
+| DELETE | `/prompts/{id}` | Delete prompt |
+| GET | `/collections` | List collections |
+| GET | `/collections/{id}` | Get collection |
+| POST | `/collections` | Create collection |
+| DELETE | `/collections/{id}` | Delete collection |
 
 ---
 

@@ -128,6 +128,50 @@ class TestPrompts:
         # Newest (Second) should be first
         assert prompts[0]["title"] == "Second"  # Will fail until Bug #3 fixed
 
+    def test_patch_prompt_partial(self, client: TestClient, sample_prompt_data):
+        """Test that PATCH updates only provided fields."""
+        create_response = client.post("/prompts", json=sample_prompt_data)
+        prompt_id = create_response.json()["id"]
+        original_updated_at = create_response.json()["updated_at"]
+        
+        # Patch only title
+        response = client.patch(f"/prompts/{prompt_id}", json={"title": "Patched Title"})
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["title"] == "Patched Title"
+        assert data["content"] == sample_prompt_data["content"]
+        assert data["description"] == sample_prompt_data["description"]
+        assert data["updated_at"] != original_updated_at
+
+    def test_patch_prompt_clear_collection(self, client: TestClient, sample_collection_data, sample_prompt_data):
+        """Test that PATCH can clear a collection_id."""
+        col_response = client.post("/collections", json=sample_collection_data)
+        collection_id = col_response.json()["id"]
+        prompt_data = {**sample_prompt_data, "collection_id": collection_id}
+        prompt_id = client.post("/prompts", json=prompt_data).json()["id"]
+        
+        # Patch to nullify collection_id
+        response = client.patch(f"/prompts/{prompt_id}", json={"collection_id": None})
+        assert response.status_code == 200
+        assert response.json()["collection_id"] is None
+
+    def test_patch_prompt_not_found(self, client: TestClient):
+        """Test that PATCHing a non-existent prompt returns 404."""
+        response = client.patch("/prompts/nonexistent-id", json={"title": "New Title"})
+        assert response.status_code == 404
+
+    def test_patch_prompt_invalid_collection(self, client: TestClient, sample_prompt_data):
+        """Test that PATCHing with a non-existent collection_id returns 400."""
+        create_response = client.post("/prompts", json=sample_prompt_data)
+        prompt_id = create_response.json()["id"]
+        
+        # Patch with a fake collection ID
+        response = client.patch(f"/prompts/{prompt_id}", json={"collection_id": "fake-collection-id"})
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Collection not found"
+
+
 
 class TestCollections:
     """Tests for collection endpoints."""
@@ -173,7 +217,5 @@ class TestCollections:
         # The prompt still exists but has invalid collection_id
         # This is Bug #4 - should be handled properly
         prompts = client.get("/prompts").json()["prompts"]
-        if prompts:
-            # Prompt exists with orphaned collection_id
-            assert prompts[0]["collection_id"] == collection_id
-            # After fix, collection_id should be None or prompt should be deleted
+        assert len(prompts) == 1
+        assert prompts[0]["collection_id"] is None

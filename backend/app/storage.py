@@ -50,7 +50,19 @@ class Storage:
         return list(self._collections.values())
     
     def delete_collection(self, collection_id: str) -> bool:
+        """Delete a collection and nullify its reference in linked prompts.
+
+        Args:
+            collection_id: The ID of the collection to delete.
+
+        Returns:
+            True if the collection was deleted, False otherwise.
+        """
         if collection_id in self._collections:
+            # Nullify collection_id for all prompts in this collection
+            for prompt in self.get_prompts_by_collection(collection_id):
+                prompt.collection_id = None
+                
             del self._collections[collection_id]
             return True
         return False
