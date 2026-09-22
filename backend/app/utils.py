@@ -20,10 +20,34 @@ def sort_prompts_by_date(prompts: List[Prompt], descending: bool = True) -> List
 
 
 def filter_prompts_by_collection(prompts: List[Prompt], collection_id: str) -> List[Prompt]:
+    """Filter prompts by collection ID.
+
+    Args:
+        prompts: A list of prompts to filter.
+        collection_id: The collection ID to match against each prompt's
+            ``collection_id`` field.
+
+    Returns:
+        List[Prompt]: A list of prompts that belong to the specified
+        collection.
+    """
     return [p for p in prompts if p.collection_id == collection_id]
 
 
 def search_prompts(prompts: List[Prompt], query: str) -> List[Prompt]:
+    """Search prompts by title and description text.
+
+    The search is case-insensitive and matches prompts whose title or
+    description contains the query string.
+
+    Args:
+        prompts: A list of prompts to search within.
+        query: The text to search for in the title and description.
+
+    Returns:
+        List[Prompt]: A list of prompts where the title or description
+        contains the query string.
+    """
     query_lower = query.lower()
     return [
         p for p in prompts 
@@ -33,12 +57,17 @@ def search_prompts(prompts: List[Prompt], query: str) -> List[Prompt]:
 
 
 def validate_prompt_content(content: str) -> bool:
-    """Check if prompt content is valid.
-    
-    A valid prompt should:
-    - Not be empty
-    - Not be just whitespace
-    - Be at least 10 characters
+    """Check whether prompt content meets basic validation rules.
+
+    The content must not be empty or whitespace-only, and the trimmed content
+    must be at least 10 characters long.
+
+    Args:
+        content: The prompt content to validate.
+
+    Returns:
+        bool: True if the content is valid according to the rules, False
+        otherwise.
     """
     if not content or not content.strip():
         return False
@@ -47,8 +76,16 @@ def validate_prompt_content(content: str) -> bool:
 
 def extract_variables(content: str) -> List[str]:
     """Extract template variables from prompt content.
-    
-    Variables are in the format {{variable_name}}
+
+    Variables are expected in the format ``{{variable_name}}`` using
+    word characters (``\w``) for the variable name.
+
+    Args:
+        content: The prompt content string to scan.
+
+    Returns:
+        List[str]: A list of variable names found in the content, without the
+        surrounding curly braces.
     """
     import re
     pattern = r'\{\{(\w+)\}\}'

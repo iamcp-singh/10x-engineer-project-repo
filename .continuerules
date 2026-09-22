@@ -1,0 +1,36 @@
+# PromptLab .continuerules
+
+## Python / FastAPI / Pydantic
+- Use Python 3.10+ type hints everywhere; prefer explicit return types.
+- FastAPI route functions live in `backend/app/api.py` and return Pydantic models.
+- Use Pydantic `BaseModel` with `Field` for validation; do not relax existing constraints.
+- Prefer small, single-purpose utility functions (see `app/utils.py`).
+
+## API & Storage Patterns
+- All HTTP routes use FastAPI decorators on plain functions; no class-based views.
+- API must depend only on the `storage` instance from `app.storage`, never on global dicts.
+- Storage logic (create/get/update/delete) stays in `Storage`; routes call storage methods and raise `HTTPException` on error.
+- For list endpoints, use wrapper response models (`PromptList`, `CollectionList`) instead of raw lists.
+
+## Naming
+- Files: snake_case for Python modules under `backend/app/`.
+- Models: `PascalCase` Pydantic classes in `models.py` (e.g., `PromptCreate`).
+- Functions: `snake_case` for all functions and methods.
+- Route paths: plural nouns (`/prompts`, `/collections`) with `{id}` path params.
+
+## HTTP Error Handling
+- Use `HTTPException` from FastAPI with explicit `status_code` and `detail`.
+- For missing resources: `404` with `detail` = `"Prompt not found"` or `"Collection not found"`.
+- For invalid related IDs (e.g., bad `collection_id`): `400` with `detail` = `"Collection not found"`.
+- Let FastAPI/Pydantic handle validation errors as `422` responses; do not wrap them manually.
+
+## Testing with pytest
+- All changes to routes, models, or storage must have or update tests in `backend/tests/`.
+- Bug fixes should include a failing test first, then the fix.
+- `pytest tests/ -v` must pass from the `backend` directory before merging.
+
+## Documentation & Docstrings
+- Every public function and class in `api.py`, `models.py`, `storage.py`, and `utils.py` must have Google-style docstrings.
+- Endpoint docstrings must document Args, Returns, and Raises for actual behavior only.
+- Update `docs/API_REFERENCE.md` when API behavior, models, or status codes change.
+- Keep docstrings consistent with the implemented behavior and tests; do not describe future plans as current behavior.

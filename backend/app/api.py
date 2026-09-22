@@ -35,6 +35,11 @@ app.add_middleware(
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
+    """Return basic health information for the API.
+
+    Returns:
+        HealthResponse: The current service status and version.
+    """
     return HealthResponse(status="healthy", version=__version__)
 
 
@@ -45,6 +50,18 @@ def list_prompts(
     collection_id: Optional[str] = None,
     search: Optional[str] = None
 ):
+    """List prompts with optional collection and search filters.
+
+    Args:
+        collection_id: Optional ID of a collection to restrict prompts to that
+            collection only.
+        search: Optional search string to match against prompt titles and
+            descriptions (case-insensitive).
+
+    Returns:
+        PromptList: A list of prompts matching the filters, sorted by
+        creation time with newest prompts first.
+    """
     prompts = storage.get_all_prompts()
     
     # Filter by collection if specified
@@ -90,6 +107,18 @@ def get_prompt(prompt_id: str):
 
 @app.post("/prompts", response_model=Prompt, status_code=201)
 def create_prompt(prompt_data: PromptCreate):
+    """Create a new prompt.
+
+    Args:
+        prompt_data: The prompt data to create, including title, content,
+            optional description, and optional collection ID.
+
+    Returns:
+        Prompt: The newly created prompt.
+
+    Raises:
+        HTTPException: If a non-existent collection ID is provided.
+    """
     # Validate collection exists if provided
     if prompt_data.collection_id:
         collection = storage.get_collection(prompt_data.collection_id)
@@ -178,6 +207,17 @@ def patch_prompt(prompt_id: str, prompt_data: PromptPatch):
 
 @app.delete("/prompts/{prompt_id}", status_code=204)
 def delete_prompt(prompt_id: str):
+    """Delete a prompt by its ID.
+
+    Args:
+        prompt_id: The unique identifier of the prompt to delete.
+
+    Returns:
+        None: Returns an empty response body with HTTP 204 on success.
+
+    Raises:
+        HTTPException: If no prompt with the given ID exists.
+    """
     if not storage.delete_prompt(prompt_id):
         raise HTTPException(status_code=404, detail="Prompt not found")
     return None
@@ -187,12 +227,29 @@ def delete_prompt(prompt_id: str):
 
 @app.get("/collections", response_model=CollectionList)
 def list_collections():
+    """List all collections.
+
+    Returns:
+        CollectionList: All collections currently stored, along with the
+        total number of collections.
+    """
     collections = storage.get_all_collections()
     return CollectionList(collections=collections, total=len(collections))
 
 
 @app.get("/collections/{collection_id}", response_model=Collection)
 def get_collection(collection_id: str):
+    """Retrieve a collection by its ID.
+
+    Args:
+        collection_id: The unique identifier of the collection to retrieve.
+
+    Returns:
+        Collection: The matching collection.
+
+    Raises:
+        HTTPException: If no collection with the given ID exists.
+    """
     collection = storage.get_collection(collection_id)
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found")
@@ -201,12 +258,35 @@ def get_collection(collection_id: str):
 
 @app.post("/collections", response_model=Collection, status_code=201)
 def create_collection(collection_data: CollectionCreate):
+    """Create a new collection.
+
+    Args:
+        collection_data: The collection data to create, including name and
+            optional description.
+
+    Returns:
+        Collection: The newly created collection.
+    """
     collection = Collection(**collection_data.model_dump())
     return storage.create_collection(collection)
 
 
 @app.delete("/collections/{collection_id}", status_code=204)
 def delete_collection(collection_id: str):
+    """Delete a collection by its ID.
+
+    Deletion also updates any prompts that reference this collection in the
+    in-memory storage layer so they no longer point to the deleted collection.
+
+    Args:
+        collection_id: The unique identifier of the collection to delete.
+
+    Returns:
+        None: Returns an empty response body with HTTP 204 on success.
+
+    Raises:
+        HTTPException: If no collection with the given ID exists.
+    """
     # BUG #4: We delete the collection but don't handle the prompts!
     # Prompts with this collection_id become orphaned with invalid reference
     # Should either: delete the prompts, set collection_id to None, or prevent deletion
