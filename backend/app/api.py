@@ -223,8 +223,35 @@ def delete_prompt(prompt_id: str):
     return None
 
 
-# ============== Collection Endpoints ==============
+# ============== Tagging Endpoints ==============
 
+@app.post("/prompts/{prompt_id}/tags", response_model=Prompt)
+def add_tags(prompt_id: str, request_body: dict):
+    """Add tags to an existing prompt.
+    Args:
+        prompt_id: The unique identifier of the prompt.
+        request_body: A dict with "tags" key containing list of tag strings.
+
+    Returns:
+        Prompt: The updated prompt with merged tags.
+    Raises:
+        HTTPException: If the prompt is not found.
+    """
+    prompt = storage.get_prompt(prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+
+    new_tags = request_body.get("tags", [])
+    # Merge tags (union, no duplicates)
+    merged_tags = list(set(prompt.tags + new_tags))
+
+    updated_prompt = prompt.model_copy(update={"tags": merged_tags})
+    updated_prompt.updated_at = get_current_time()
+
+    return storage.update_prompt(prompt_id, updated_prompt)
+
+
+# ============== Collection Endpoints ==============
 @app.get("/collections", response_model=CollectionList)
 def list_collections():
     """List all collections.
@@ -246,7 +273,6 @@ def get_collection(collection_id: str):
 
     Returns:
         Collection: The matching collection.
-
     Raises:
         HTTPException: If no collection with the given ID exists.
     """
@@ -254,7 +280,7 @@ def get_collection(collection_id: str):
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found")
     return collection
-
+    
 
 @app.post("/collections", response_model=Collection, status_code=201)
 def create_collection(collection_data: CollectionCreate):
@@ -297,3 +323,4 @@ def delete_collection(collection_id: str):
     # Missing: Handle prompts that belong to this collection!
     
     return None
+
