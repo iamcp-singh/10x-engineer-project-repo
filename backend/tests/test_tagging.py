@@ -1,6 +1,5 @@
 """Tests for tagging feature."""
 
-import pytest
 from fastapi.testclient import TestClient
 
 

@@ -1,6 +1,5 @@
 """Tests for utility functions."""
 
-import pytest
 from datetime import timedelta
 from app.utils import (
     extract_variables,

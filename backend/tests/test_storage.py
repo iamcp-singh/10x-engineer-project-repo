@@ -1,6 +1,5 @@
 """Tests for storage operations."""
 
-import pytest
 from app.storage import storage
 from app.models import Prompt, Collection
 
