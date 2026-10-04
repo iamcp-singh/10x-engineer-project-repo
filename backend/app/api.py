@@ -214,14 +214,11 @@ def patch_prompt(prompt_id: str, prompt_data: PromptPatch):
 
 
 @app.delete("/prompts/{prompt_id}", status_code=204)
-def delete_prompt(prompt_id: str) -> None:
+def delete_prompt(prompt_id: str):
     """Delete a prompt by its ID.
 
     Args:
         prompt_id: The unique identifier of the prompt to delete.
-
-    Returns:
-        None: Returns an empty response body with HTTP 204 on success.
 
     Raises:
         HTTPException: If no prompt with the given ID exists.
@@ -306,7 +303,7 @@ def create_collection(collection_data: CollectionCreate):
 
 
 @app.delete("/collections/{collection_id}", status_code=204)
-def delete_collection(collection_id: str) -> None:
+def delete_collection(collection_id: str):
     """Delete a collection by its ID.
 
     Deletion also updates any prompts that reference this collection in the
@@ -314,9 +311,6 @@ def delete_collection(collection_id: str) -> None:
 
     Args:
         collection_id: The unique identifier of the collection to delete.
-
-    Returns:
-        None: Returns an empty response body with HTTP 204 on success.
 
     Raises:
         HTTPException: If no collection with the given ID exists.
