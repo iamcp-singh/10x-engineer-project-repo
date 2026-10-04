@@ -1,26 +1,33 @@
 """FastAPI routes for PromptLab"""
 
+from __future__ import annotations
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
 
+from app import __version__
 from app.models import (
-    Prompt, PromptCreate, PromptUpdate, PromptPatch,
-    Collection, CollectionCreate,
-    PromptList, CollectionList, HealthResponse,
-    get_current_time
+    Collection,
+    CollectionCreate,
+    CollectionList,
+    HealthResponse,
+    Prompt,
+    PromptCreate,
+    PromptList,
+    PromptPatch,
+    PromptUpdate,
+    get_current_time,
 )
 from app.storage import storage
-from app.utils import sort_prompts_by_date, filter_prompts_by_collection, search_prompts
-from app import __version__
+from app.utils import filter_prompts_by_collection, search_prompts, sort_prompts_by_date
 
 
-def validate_collection_exists(collection_id: Optional[str]) -> None:
+def validate_collection_exists(collection_id: str | None) -> None:
     """Validate that a collection exists if ID is provided.
-    
+
     Args:
         collection_id: The collection ID to validate, or None.
-    
+
     Raises:
         HTTPException: If collection_id is provided but collection does not exist.
     """
@@ -33,7 +40,7 @@ def validate_collection_exists(collection_id: Optional[str]) -> None:
 app = FastAPI(
     title="PromptLab API",
     description="AI Prompt Engineering Platform",
-    version=__version__
+    version=__version__,
 )
 
 # CORS middleware
@@ -48,6 +55,7 @@ app.add_middleware(
 
 # ============== Health Check ==============
 
+
 @app.get("/health", response_model=HealthResponse)
 def health_check():
     """Return basic health information for the API.
@@ -59,11 +67,9 @@ def health_check():
 
 # ============== Prompt Endpoints ==============
 
+
 @app.get("/prompts", response_model=PromptList)
-def list_prompts(
-    collection_id: Optional[str] = None,
-    search: Optional[str] = None
-):
+def list_prompts(collection_id: str | None = None, search: str | None = None):
     """List prompts with optional collection and search filters.
     Args:
         collection_id: Optional ID of a collection to restrict prompts to that
@@ -75,19 +81,19 @@ def list_prompts(
         creation time with newest prompts first.
     """
     prompts = storage.get_all_prompts()
-    
+
     # Filter by collection if specified
     if collection_id:
         prompts = filter_prompts_by_collection(prompts, collection_id)
-    
+
     # Search if query provided
     if search:
         prompts = search_prompts(prompts, search)
-    
+
     # Sort by date (newest first)
     # Note: There might be an issue with the sorting...
     prompts = sort_prompts_by_date(prompts, descending=True)
-    
+
     return PromptList(prompts=prompts, total=len(prompts))
 
 
@@ -109,10 +115,10 @@ def get_prompt(prompt_id: str):
     # Should return 404 instead!
     prompt = storage.get_prompt(prompt_id)
 
-    #FIX of BUG #1: Check if prompt is None before accessing its attributes
+    # FIX of BUG #1: Check if prompt is None before accessing its attributes
     if not prompt:
         raise HTTPException(status_code=404, detail="Prompt not found")
-    
+
     # This line causes the bug - accessing attribute on None
     return prompt
 
@@ -154,7 +160,7 @@ def update_prompt(prompt_id: str, prompt_data: PromptUpdate):
     existing = storage.get_prompt(prompt_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Prompt not found")
-    
+
     validate_collection_exists(prompt_data.collection_id)
 
     updated_prompt = Prompt(
@@ -164,9 +170,9 @@ def update_prompt(prompt_id: str, prompt_data: PromptUpdate):
         description=prompt_data.description,
         collection_id=prompt_data.collection_id,
         created_at=existing.created_at,
-        updated_at=get_current_time()
+        updated_at=get_current_time(),
     )
-    
+
     return storage.update_prompt(prompt_id, updated_prompt)
 
 
@@ -208,7 +214,7 @@ def patch_prompt(prompt_id: str, prompt_data: PromptPatch):
 
 
 @app.delete("/prompts/{prompt_id}", status_code=204)
-def delete_prompt(prompt_id: str):
+def delete_prompt(prompt_id: str) -> None:
     """Delete a prompt by its ID.
 
     Args:
@@ -222,10 +228,10 @@ def delete_prompt(prompt_id: str):
     """
     if not storage.delete_prompt(prompt_id):
         raise HTTPException(status_code=404, detail="Prompt not found")
-    return None
 
 
 # ============== Tagging Endpoints ==============
+
 
 @app.post("/prompts/{prompt_id}/tags", response_model=Prompt)
 def add_tags(prompt_id: str, request_body: dict):
@@ -300,7 +306,7 @@ def create_collection(collection_data: CollectionCreate):
 
 
 @app.delete("/collections/{collection_id}", status_code=204)
-def delete_collection(collection_id: str):
+def delete_collection(collection_id: str) -> None:
     """Delete a collection by its ID.
 
     Deletion also updates any prompts that reference this collection in the
@@ -318,11 +324,8 @@ def delete_collection(collection_id: str):
     # BUG #4: We delete the collection but don't handle the prompts!
     # Prompts with this collection_id become orphaned with invalid reference
     # Should either: delete the prompts, set collection_id to None, or prevent deletion
-    
+
     if not storage.delete_collection(collection_id):
         raise HTTPException(status_code=404, detail="Collection not found")
-    
+
     # Missing: Handle prompts that belong to this collection!
-
-    return None
-

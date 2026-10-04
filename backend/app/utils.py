@@ -1,10 +1,13 @@
 """Utility functions for PromptLab"""
 
-from typing import List
+from __future__ import annotations
+
 from app.models import Prompt
 
 
-def sort_prompts_by_date(prompts: List[Prompt], descending: bool = True) -> List[Prompt]:
+def sort_prompts_by_date(
+    prompts: list[Prompt], descending: bool = True
+) -> list[Prompt]:
     """Sort prompts by creation date.
 
     Args:
@@ -19,7 +22,9 @@ def sort_prompts_by_date(prompts: List[Prompt], descending: bool = True) -> List
     return sorted(prompts, key=lambda p: p.created_at, reverse=descending)
 
 
-def filter_prompts_by_collection(prompts: List[Prompt], collection_id: str) -> List[Prompt]:
+def filter_prompts_by_collection(
+    prompts: list[Prompt], collection_id: str
+) -> list[Prompt]:
     """Filter prompts by collection ID.
 
     Args:
@@ -34,7 +39,7 @@ def filter_prompts_by_collection(prompts: List[Prompt], collection_id: str) -> L
     return [p for p in prompts if p.collection_id == collection_id]
 
 
-def search_prompts(prompts: List[Prompt], query: str) -> List[Prompt]:
+def search_prompts(prompts: list[Prompt], query: str) -> list[Prompt]:
     """Search prompts by title and description text.
 
     The search is case-insensitive and matches prompts whose title or
@@ -50,9 +55,10 @@ def search_prompts(prompts: List[Prompt], query: str) -> List[Prompt]:
     """
     query_lower = query.lower()
     return [
-        p for p in prompts 
-        if query_lower in p.title.lower() or 
-           (p.description and query_lower in p.description.lower())
+        p
+        for p in prompts
+        if query_lower in p.title.lower()
+        or (p.description and query_lower in p.description.lower())
     ]
 
 
@@ -74,8 +80,8 @@ def validate_prompt_content(content: str) -> bool:
     return len(content.strip()) >= 10
 
 
-def extract_variables(content: str) -> List[str]:
-    """Extract template variables from prompt content.
+def extract_variables(content: str) -> list[str]:
+    r"""Extract template variables from prompt content.
 
     Variables are expected in the format ``{{variable_name}}`` using
     word characters (``\w``) for the variable name.
@@ -84,9 +90,10 @@ def extract_variables(content: str) -> List[str]:
         content: The prompt content string to scan.
 
     Returns:
-        List[str]: A list of variable names found in the content, without the
+        list[str]: A list of variable names found in the content, without the
         surrounding curly braces.
     """
     import re
-    pattern = r'\{\{(\w+)\}\}'
+
+    pattern = r"\{\{(\w+)\}\}"
     return re.findall(pattern, content)

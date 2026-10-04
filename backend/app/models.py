@@ -1,9 +1,11 @@
 """Pydantic models for PromptLab"""
 
-from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
+from datetime import datetime, timezone
 from uuid import uuid4
+
+from pydantic import BaseModel, Field
 
 
 def generate_id() -> str:
@@ -11,17 +13,18 @@ def generate_id() -> str:
 
 
 def get_current_time() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 # ============== Prompt Models ==============
 
+
 class PromptBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     content: str = Field(..., min_length=1)
-    description: Optional[str] = Field(None, max_length=500)
-    collection_id: Optional[str] = None
-    tags: List[str] = Field(default_factory=list, max_items=50)
+    description: str | None = Field(None, max_length=500)
+    collection_id: str | None = None
+    tags: list[str] = Field(default_factory=list, max_items=50)
 
 
 class PromptCreate(PromptBase):
@@ -31,13 +34,15 @@ class PromptCreate(PromptBase):
 class PromptUpdate(PromptBase):
     pass
 
+
 class PromptPatch(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    content: Optional[str] = Field(None, min_length=1)
-    description: Optional[str] = Field(None, max_length=500)
-    collection_id: Optional[str] = None
-    tags: Optional[List[str]] = Field(default=None, max_items=50)
-    
+    title: str | None = Field(None, min_length=1, max_length=200)
+    content: str | None = Field(None, min_length=1)
+    description: str | None = Field(None, max_length=500)
+    collection_id: str | None = None
+    tags: list[str] | None = Field(default=None, max_items=50)
+
+
 class Prompt(PromptBase):
     id: str = Field(default_factory=generate_id)
     created_at: datetime = Field(default_factory=get_current_time)
@@ -49,9 +54,10 @@ class Prompt(PromptBase):
 
 # ============== Collection Models ==============
 
+
 class CollectionBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
 
 
 class CollectionCreate(CollectionBase):
@@ -68,17 +74,17 @@ class Collection(CollectionBase):
 
 # ============== Response Models ==============
 
+
 class PromptList(BaseModel):
-    prompts: List[Prompt]
+    prompts: list[Prompt]
     total: int
 
 
 class CollectionList(BaseModel):
-    collections: List[Collection]
+    collections: list[Collection]
     total: int
 
 
 class HealthResponse(BaseModel):
     status: str
     version: str
-
