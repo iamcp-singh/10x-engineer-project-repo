@@ -3,6 +3,7 @@ import { Layout, Sidebar } from './components/layout';
 import { PromptList, PromptDetail, PromptForm } from './components/prompts';
 import { CollectionForm } from './components/collections';
 import { Button, Modal, SearchBar } from './components/shared';
+import { getPrompts, getCollections } from './api';
 
 function App() {
   const [prompts, setPrompts] = useState([]);
@@ -29,29 +30,14 @@ function App() {
       setLoading(true);
       setError(null);
       
-      let url = 'http://localhost:8000/prompts';
-      const params = new URLSearchParams();
+      const data = await getPrompts({
+        search: searchQuery || undefined,
+        collection_id: selectedCollection || undefined,
+      });
       
-      if (searchQuery) {
-        params.append('search', searchQuery);
-      }
-      if (selectedCollection) {
-        params.append('collection_id', selectedCollection);
-      }
-      
-      if (params.toString()) {
-        url += '?' + params.toString();
-      }
-      
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to load prompts');
-      }
-      
-      const data = await response.json();
       setPrompts(data.prompts || []);
     } catch (err) {
-      setError("Couldn't load prompts. Try refreshing.");
+      setError(err.message || "Couldn't load prompts. Try refreshing.");
     } finally {
       setLoading(false);
     }
@@ -59,11 +45,8 @@ function App() {
 
   const fetchCollections = async () => {
     try {
-      const response = await fetch('http://localhost:8000/collections');
-      if (response.ok) {
-        const data = await response.json();
-        setCollections(data.collections || []);
-      }
+      const data = await getCollections();
+      setCollections(data.collections || []);
     } catch (err) {
       console.error('Failed to fetch collections:', err);
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, ErrorMessage } from '../shared';
+import { getPrompt, createPrompt, updatePrompt, getCollections } from '../../api';
 
 export default function PromptForm({ promptId = null, onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
@@ -25,11 +26,8 @@ export default function PromptForm({ promptId = null, onSuccess, onCancel }) {
 
   const fetchCollections = async () => {
     try {
-      const response = await fetch('http://localhost:8000/collections');
-      if (response.ok) {
-        const data = await response.json();
-        setCollections(data.collections || []);
-      }
+      const data = await getCollections();
+      setCollections(data.collections || []);
     } catch (err) {
       console.error('Failed to fetch collections:', err);
     }
@@ -38,13 +36,7 @@ export default function PromptForm({ promptId = null, onSuccess, onCancel }) {
   const fetchPrompt = async () => {
     try {
       setFetchingPrompt(true);
-      const response = await fetch(`http://localhost:8000/prompts/${promptId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to load prompt');
-      }
-      
-      const data = await response.json();
+      const data = await getPrompt(promptId);
       setFormData({
         title: data.title || '',
         content: data.content || '',
@@ -104,26 +96,10 @@ export default function PromptForm({ promptId = null, onSuccess, onCancel }) {
           : [],
       };
 
-      const url = promptId 
-        ? `http://localhost:8000/prompts/${promptId}`
-        : 'http://localhost:8000/prompts';
+      const savedPrompt = promptId
+        ? await updatePrompt(promptId, payload)
+        : await createPrompt(payload);
       
-      const method = promptId ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to save prompt');
-      }
-
-      const savedPrompt = await response.json();
       onSuccess(savedPrompt);
     } catch (err) {
       setSubmitError(err.message || 'Failed to save. Please try again.');

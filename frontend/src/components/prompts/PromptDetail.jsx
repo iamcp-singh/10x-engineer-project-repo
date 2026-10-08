@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, LoadingSpinner, ErrorMessage, Modal } from '../shared';
+import { getPrompt, deletePrompt } from '../../api';
 
 export default function PromptDetail({ promptId, onEdit, onDelete, onClose }) {
   const [prompt, setPrompt] = useState(null);
@@ -16,13 +17,7 @@ export default function PromptDetail({ promptId, onEdit, onDelete, onClose }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`http://localhost:8000/prompts/${promptId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to load prompt');
-      }
-      
-      const data = await response.json();
+      const data = await getPrompt(promptId);
       setPrompt(data);
     } catch (err) {
       setError(err.message || 'Prompt not found or failed to load.');
@@ -34,14 +29,7 @@ export default function PromptDetail({ promptId, onEdit, onDelete, onClose }) {
   const handleDelete = async () => {
     try {
       setDeleting(true);
-      const response = await fetch(`http://localhost:8000/prompts/${promptId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete prompt');
-      }
-
+      await deletePrompt(promptId);
       onDelete(promptId);
     } catch (err) {
       setError(err.message || "Couldn't delete prompt. Try again.");

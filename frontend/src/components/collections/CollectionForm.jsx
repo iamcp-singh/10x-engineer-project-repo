@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, ErrorMessage } from '../shared';
+import { createCollection } from '../../api';
 
 export default function CollectionForm({ onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
@@ -47,20 +48,7 @@ export default function CollectionForm({ onSuccess, onCancel }) {
         description: formData.description.trim() || null,
       };
 
-      const response = await fetch('http://localhost:8000/collections', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to create collection');
-      }
-
-      const savedCollection = await response.json();
+      const savedCollection = await createCollection(payload);
       onSuccess(savedCollection);
     } catch (err) {
       setSubmitError(err.message || 'Failed to save. Please try again.');
