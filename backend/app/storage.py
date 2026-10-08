@@ -6,7 +6,7 @@ In a production environment, this would be replaced with a database.
 
 from __future__ import annotations
 
-from app.models import Collection, Prompt
+from app.models import Collection, Prompt, PromptVersion
 
 
 class Storage:
@@ -21,6 +21,7 @@ class Storage:
         """Initialize empty in-memory stores for prompts and collections."""
         self._prompts: dict[str, Prompt] = {}
         self._collections: dict[str, Collection] = {}
+        self._prompt_versions: dict[str, list[PromptVersion]] = {}
 
     # ============== Prompt Operations ==============
 
@@ -152,12 +153,58 @@ class Storage:
         """
         return [p for p in self._prompts.values() if p.collection_id == collection_id]
 
+    # ============== Version Operations ==============
+
+    def add_prompt_version(self, version: PromptVersion) -> PromptVersion:
+        """Store a new prompt version.
+
+        Args:
+            version: The PromptVersion instance to store.
+
+        Returns:
+            PromptVersion: The same version instance after storing it.
+        """
+        if version.prompt_id not in self._prompt_versions:
+            self._prompt_versions[version.prompt_id] = []
+        self._prompt_versions[version.prompt_id].append(version)
+        return version
+
+    def get_prompt_versions(self, prompt_id: str) -> list[PromptVersion]:
+        """Retrieve all versions for a prompt, ordered newest first.
+
+        Args:
+            prompt_id: The ID of the prompt whose versions to retrieve.
+
+        Returns:
+            List[PromptVersion]: List of versions, newest first by version_number.
+        """
+        versions = self._prompt_versions.get(prompt_id, [])
+        # Sort by version_number descending (newest first)
+        return sorted(versions, key=lambda v: v.version_number, reverse=True)
+
+    def get_prompt_version(self, prompt_id: str, version_id: str) -> PromptVersion | None:
+        """Retrieve a specific version by prompt_id and version_id.
+
+        Args:
+            prompt_id: The ID of the prompt.
+            version_id: The ID of the specific version.
+
+        Returns:
+            Optional[PromptVersion]: The version if found, otherwise None.
+        """
+        versions = self._prompt_versions.get(prompt_id, [])
+        for version in versions:
+            if version.id == version_id:
+                return version
+        return None
+
     # ============== Utility ==============
 
     def clear(self):
         """Remove all prompts and collections from storage."""
         self._prompts.clear()
         self._collections.clear()
+        self._prompt_versions.clear()
 
 
 # Global storage instance
