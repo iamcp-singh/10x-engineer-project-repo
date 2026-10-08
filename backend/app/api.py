@@ -39,6 +39,29 @@ def validate_collection_exists(collection_id: str | None) -> None:
             raise HTTPException(status_code=400, detail="Collection not found")
 
 
+def create_prompt_version(prompt: Prompt) -> None:
+    """Create a version snapshot of a prompt.
+
+    Args:
+        prompt: The prompt to create a version for.
+    """
+    # Get existing versions to determine version number
+    existing_versions = storage.get_prompt_versions(prompt.id)
+    version_number = len(existing_versions) + 1
+
+    # Create version snapshot
+    version = PromptVersion(
+        prompt_id=prompt.id,
+        title=prompt.title,
+        content=prompt.content,
+        description=prompt.description,
+        collection_id=prompt.collection_id,
+        version_number=version_number,
+    )
+
+    storage.add_prompt_version(version)
+
+
 app = FastAPI(
     title="PromptLab API",
     description="AI Prompt Engineering Platform",
@@ -142,7 +165,12 @@ def create_prompt(prompt_data: PromptCreate):
     validate_collection_exists(prompt_data.collection_id)
 
     prompt = Prompt(**prompt_data.model_dump())
-    return storage.create_prompt(prompt)
+    created_prompt = storage.create_prompt(prompt)
+    
+    # Auto-create version 1
+    create_prompt_version(created_prompt)
+    
+    return created_prompt
 
 
 @app.put("/prompts/{prompt_id}", response_model=Prompt)
@@ -171,11 +199,17 @@ def update_prompt(prompt_id: str, prompt_data: PromptUpdate):
         content=prompt_data.content,
         description=prompt_data.description,
         collection_id=prompt_data.collection_id,
+        tags=prompt_data.tags,
         created_at=existing.created_at,
         updated_at=get_current_time(),
     )
 
-    return storage.update_prompt(prompt_id, updated_prompt)
+    result = storage.update_prompt(prompt_id, updated_prompt)
+    
+    # Auto-create new version
+    create_prompt_version(result)
+    
+    return result
 
 
 # NOTE: PATCH endpoint is missing! Students need to implement this.
@@ -212,7 +246,12 @@ def patch_prompt(prompt_id: str, prompt_data: PromptPatch):
     updated_prompt = existing.model_copy(update=update_data)
     updated_prompt.updated_at = get_current_time()
 
-    return storage.update_prompt(prompt_id, updated_prompt)
+    result = storage.update_prompt(prompt_id, updated_prompt)
+    
+    # Auto-create new version
+    create_prompt_version(result)
+    
+    return result
 
 
 @app.delete("/prompts/{prompt_id}", status_code=204)

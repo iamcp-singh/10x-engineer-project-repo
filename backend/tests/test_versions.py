@@ -154,7 +154,7 @@ class TestVersionAPI:
 
     def test_list_versions_for_prompt(self):
         """Test GET /prompts/{id}/versions returns all versions"""
-        # Create a prompt
+        # Create a prompt (auto-creates version 1)
         response = self.client.post(
             "/prompts",
             json={
@@ -166,25 +166,17 @@ class TestVersionAPI:
         assert response.status_code == 201
         prompt_id = response.json()["id"]
 
-        # Manually add versions (in real implementation, these would be auto-created)
-        v1 = PromptVersion(
-            prompt_id=prompt_id,
-            title="Test Prompt",
-            content="Initial content",
-            description="Test description",
-            collection_id=None,
-            version_number=1,
+        # Update to create version 2
+        self.client.put(
+            f"/prompts/{prompt_id}",
+            json={
+                "title": "Updated Prompt",
+                "content": "Updated content",
+                "description": "Test description",
+                "collection_id": None,
+                "tags": [],
+            },
         )
-        v2 = PromptVersion(
-            prompt_id=prompt_id,
-            title="Updated Prompt",
-            content="Updated content",
-            description="Test description",
-            collection_id=None,
-            version_number=2,
-        )
-        storage.add_prompt_version(v1)
-        storage.add_prompt_version(v2)
 
         # Get versions
         response = self.client.get(f"/prompts/{prompt_id}/versions")
@@ -206,9 +198,9 @@ class TestVersionAPI:
         assert response.status_code == 404
         assert response.json()["detail"] == "Prompt not found"
 
-    def test_list_versions_empty(self):
-        """Test GET /prompts/{id}/versions returns empty list when no versions"""
-        # Create a prompt
+    def test_list_versions_returns_version_on_create(self):
+        """Test GET /prompts/{id}/versions returns version 1 after create"""
+        # Create a prompt (auto-creates version 1)
         response = self.client.post(
             "/prompts",
             json={
@@ -218,13 +210,14 @@ class TestVersionAPI:
         )
         prompt_id = response.json()["id"]
 
-        # Get versions (none exist yet)
+        # Get versions (should have version 1 from creation)
         response = self.client.get(f"/prompts/{prompt_id}/versions")
         
         assert response.status_code == 200
         data = response.json()
-        assert data["versions"] == []
-        assert data["total"] == 0
+        assert len(data["versions"]) == 1
+        assert data["total"] == 1
+        assert data["versions"][0]["version_number"] == 1
 
     def test_get_specific_version(self):
         """Test GET /prompts/{id}/versions/{version_id} returns specific version"""
