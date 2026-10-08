@@ -274,3 +274,83 @@ class TestVersionAPI:
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Prompt version not found"
+
+    def test_rollback_to_version(self):
+        """Test POST /prompts/{id}/versions/{version_id}/rollback"""
+        # Create a prompt
+        response = self.client.post(
+            "/prompts",
+            json={
+                "title": "Original Title",
+                "content": "Original content",
+                "description": "Original description",
+            },
+        )
+        assert response.status_code == 201
+        prompt_id = response.json()["id"]
+        original_created_at = response.json()["created_at"]
+
+        # Add a version (simulating what would be auto-created)
+        old_version = PromptVersion(
+            prompt_id=prompt_id,
+            title="Original Title",
+            content="Original content",
+            description="Original description",
+            collection_id=None,
+            version_number=1,
+        )
+        storage.add_prompt_version(old_version)
+
+        # Update the prompt
+        response = self.client.put(
+            f"/prompts/{prompt_id}",
+            json={
+                "title": "Updated Title",
+                "content": "Updated content",
+                "description": "Updated description",
+                "collection_id": None,
+                "tags": [],
+            },
+        )
+        assert response.status_code == 200
+
+        # Rollback to the old version
+        response = self.client.post(
+            f"/prompts/{prompt_id}/versions/{old_version.id}/rollback"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        # Should have same ID and created_at
+        assert data["id"] == prompt_id
+        assert data["created_at"] == original_created_at
+        # Should have old version's content
+        assert data["title"] == "Original Title"
+        assert data["content"] == "Original content"
+        assert data["description"] == "Original description"
+        # updated_at should be newer
+        assert data["updated_at"] > old_version.created_at.isoformat()
+
+    def test_rollback_prompt_not_found(self):
+        """Test POST /prompts/{id}/versions/{version_id}/rollback with bad prompt ID"""
+        response = self.client.post("/prompts/bad-id/versions/version-id/rollback")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Prompt not found"
+
+    def test_rollback_version_not_found(self):
+        """Test POST /prompts/{id}/versions/{version_id}/rollback with bad version ID"""
+        # Create a prompt
+        response = self.client.post(
+            "/prompts",
+            json={"title": "Test", "content": "Content"},
+        )
+        prompt_id = response.json()["id"]
+
+        # Try to rollback to non-existent version
+        response = self.client.post(
+            f"/prompts/{prompt_id}/versions/bad-version-id/rollback"
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Prompt version not found"
