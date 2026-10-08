@@ -1,0 +1,191 @@
+## Module 4 Project
+
+## Vibe Code the Frontend
+
+AIE 500 — PromptLab | Competency C3, first part
+
+| Competency | C3 — End-to-End AI-Assisted Application Delivery |
+| --- | --- |
+| Criteria judged in this module | C3.1 – C3.5 |
+| What you submit | The deployed PromptLab application and its repository |
+| Does this complete the competency? | No. C3 is completed at Module 5 with your recorded defense. |
+| Attempts | Three attempts at this module submission. Attempts are counted per module — needing a second attempt here does not affect any other module. |
+
+## Scenario
+
+Time to make PromptLab usable. You need a React frontend that talks to your real API, one more backend feature to support it, and the whole thing deployed where someone else can reach it.
+
+Start preparing for Module 5 now. Your defense asks you to explain code we choose, and much of it will be code you generate this module. As you build, spend a few minutes reading back anything the AI produced that you didn't examine closely.
+
+## Tasks
+
+## Task 4.1 — Write the frontend spec → specs/frontend.md
+
+Before you generate any React, specify it. C3.1 checks that your project structure follows a specification, so the specification has to exist first.
+
+- Screens and their purpose
+
+- Component inventory — each component, its responsibility and its props
+
+- Which API endpoint each screen consumes
+
+- State management approach
+
+- Loading, error and empty state behaviour
+
+- The organizing principle of your folder structure, stated in one sentence
+
+## Task 4.2 — Implement the second spec feature using TDD
+
+
+Implement the Module 2 spec you didn't build in Module 3 — Prompt Versioning or Tagging System, whichever is left — plus any endpoints your frontend spec needs that don't exist yet.
+
+- o Failing test committed before implementation, feature by feature
+
+- o Suite passes against your deployed configuration, not just locally
+
+- Tests exercise your logic, not the framework
+
+Time budget (C3.5): the increment from starting this backend work to your first passing endpoint must be completed within 4 hours, evidenced by commit timestamps. Commit as you go — batching everything into one commit at the end means the timestamps prove nothing, which is a Not Yet regardless of how fast you actually were.
+
+## Task 4.3 — Set up the React project
+
+```
+cd frontend
+npm create vite@latest . -- --template react
+npm install
+```
+
+- Vite + React initialized
+
+- Folder structure matching specs/frontend.md
+
+- Styling solution chosen and applied — CSS modules, Tailwind, whatever you specified
+
+- Template directories you aren't using removed — leftover scaffolding counts against C3.1
+
+## Task 4.4 — Build the components
+
+Every component in your spec should exist as its own module. Keep backend and frontend concerns separate.
+
+Layout: Layout.jsx, Header.jsx, Sidebar.jsx
+
+Prompts: PromptList.jsx, PromptCard.jsx, PromptForm.jsx, PromptDetail.jsx
+
+Collections: CollectionList.jsx, CollectionForm.jsx
+
+Shared: Button.jsx, Modal.jsx, SearchBar.jsx, LoadingSpinner.jsx, ErrorMessage.jsx
+
+## Task 4.5 — API integration
+
+- src/api/client.js — base URL, fetch wrapper, consistent error handling
+
+- src/api/prompts.js — getPrompts, getPrompt, createPrompt, updatePrompt, deletePrompt
+
+- src/api/collections.js — getCollections, createCollection, deleteCollection
+
+- o CORS configured on the backend and the API base set via environment variable
+
+The frontend must consume your real backend (C3.3 — MUST PASS). A UI running on mocked or hard-coded data does not meet this criterion no matter how good it looks.
+
+## Task 4.6 — Full CRUD flow end to end
+
+- o View all prompts on the dashboard
+
+- o Open a prompt to see details
+
+
+- Create a prompt via the form
+
+- Edit an existing prompt
+
+- Delete a prompt with confirmation
+
+- Create and manage collections
+
+- oo Search works
+
+- Filter prompts by collection
+
+## Task 4.7 — UX polish
+
+- Loading states for every async operation
+
+- User-visible error messages — API failures must surface, not disappear
+
+- Empty states
+
+- Responsive on mobile
+
+- Keyboard accessibility
+
+- Form validation with feedback
+
+## Task 4.8 — Deploy it → docs/deployment.md
+
+Deployment is required, not a bonus. C3.4 asks whether a second person could deploy or run your
+
+application using only what you committed.
+
+- Application deployed and reachable, or runnable via a documented container command
+
+- o docs/deployment.md with every step, every environment variable, and how secrets are handled
+
+- Nothing configured by hand that isn't written down
+
+- No secrets, credentials or API keys committed — this gets your submission returned immediately
+
+Test this by handing the instructions to someone who has never seen your project, or by starting from a fresh clone yourself.
+
+## What You Submit
+
+- specs/frontend.md
+
+- Second spec feature implemented test-first, suite green against deployed config
+
+- Commit timestamps showing the 4-hour increment
+
+- React frontend matching the spec, with unused scaffolding removed
+
+- All CRUD operations working against the real backend — MUST PASS
+
+- Loading, error and empty states handled
+
+- Deployed application plus docs/deployment.md
+
+- Your GitHub repository link, a brief summary, and any known issues
+
+
+## Verification
+
+\# Terminal 1 cd backend && python main.py
+
+\# Terminal 2 cd frontend && npm run dev
+
+Then verify against your deployed instance, not just localhost.
+
+
+## What This Module Is Judged Against
+
+Generated from PromptLab Criterion Set v2.1 (see the PromptLab Grading Rubric). Do not edit here — changes must be made in the rubric and regenerated.
+
+These are the exact criteria your assessor works through for this submission. Nothing is hidden and nothing is judged on impression. Read the right-hand column first — if your work matches one of those patterns, the criterion comes back Not Yet.
+
+| What is checked | What earns “Met” | Common mistakes to avoid |
+| --- | --- | --- |
+| C3.1 — Your structure follows your spec Evidence: specs/frontend.md, frontend/src/ | Every component in your frontend spec exists as its own module, and you can state the organizing principle of your folder structure in one sentence. Backend and frontend concerns stay separate. | – Vite template directories left in unused. – Specified components missing or merged with no explanation. – Concerns tangled across modules. |
+| C3.2 — Your backend increment was built test- first Evidence: Commit history for your Module 4 feature; test run against deployed config | The second spec feature, and any endpoints your frontend needs, show a failing test before implementation in commit history. The suite passes against your deployed configuration, not just locally. | – Tests added once the feature was finished. – A suite that passes locally but not against the deployed config. – Tests that exercise FastAPI rather than your own logic. |
+| C3.3 — Your app runs end to end Evidence: Deployed app or documented container run; frontend/, backend/ MUST PASS | The deployed application completes its core journeys: list prompts, view detail, create, edit, delete with confirmation, manage collections, filter by collection, search. The frontend consumes your real API. Loading and empty states present, and API failures produce visible user-facing messages. | – A frontend running on mocked or hard- coded data. – A core journey breaking partway through. – API errors producing a blank screen or nothing at all. |
+| C3.4 — Someone else could deploy it Evidence: docs/deployment.md, committed configuration | A second person can deploy or run PromptLab using only what's committed. Every step, environment variable and secrets-handling approach is documented. | – Deployment relying on something you configured by hand and never wrote down. – Instructions missing environment variables. – Only a running instance, with no reproducible path to it. |
+| C3.5 — You worked inside the time budget Evidence: Commit timestamps for the Module 4 backend increment | Scaffolding to first passing endpoint completed within the budget stated in this module's tasks, shown by commit timestamps. | – Going over with no blocker documented. – Committing everything in one batch, so timestamps prove nothing. – Committing unfinished work to hit the time and finishing later. |
+
+
+## Where the Rules Live
+
+This file contains the tasks and criteria for this module only. Everything else lives in Getting Started:
+
+- Syllabus — grading policy, re-attempt policy, integrity and AI attribution.
+
+- Course & Project Guide — how mastery grading works in plain language, and how to do well.
+
+- PromptLab Grading Rubric — all 22 criteria across all five modules, if you want to see what's coming.

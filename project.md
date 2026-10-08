@@ -1,0 +1,286 @@
+## Module 3 Project
+
+## Production-Ready
+
+AIE 500 — PromptLab | Competency C2, completed
+
+| Competency | C2 — Specification-Driven Development & Automated Quality Engineering |
+| --- | --- |
+| Criteria judged in this module | C2.4 – C2.8, plus final judgment on C2.1 and C2.2 from Module 2 |
+| What you submit | Production-ready backend: tests, a TDD-implemented feature, pipeline, container and a documented refactor |
+| Does this complete the competency? | Yes. C2 is judged complete on this submission. |
+| Attempts | Three attempts at this module submission. Attempts are counted per module — needing a second attempt here does not affect any other module. |
+
+## Scenario
+
+We're preparing for launch. That means real tests, a pipeline that blocks broken code, and containerization. No more “it works on my machine.”
+
+Your Module 2 documentation is re-checked here. C2.1 and C2.2 were provisional. After this module's feature work and refactoring, your docs and API reference must still match the code. Update them as you go rather than at the end.
+
+## Tasks
+
+## Task 3.1 — Comprehensive test suite
+
+Reach 80% coverage or higher, measured with pytest-cov.
+
+- tests/test_api.py — all endpoints, error cases (404, 400, 422), edge cases, query parameters
+
+- o tests/test_storage.py — CRUD operations, persistence within a session, edge cases
+
+- tests/test_utils.py — all utility functions and error conditions
+
+- tests/test_models.py — validation, defaults, serialization
+
+Every endpoint in your specs and API reference needs at least one test for the success path and one for a documented failure case. Coverage reached by tests that execute code without asserting anything does not meet C2.5.
+
+## Task 3.2 — Implement one spec feature using TDD
+
+
+Pick one feature from your Module 2 specs — Prompt Versioning or Tagging System. You'll implement the other in Module 4.
+
+Work in strict order, committing at each step:
+
+- 1. Commit a failing test first
+
+- 2. Commit the minimum implementation to pass it
+
+- 3. Refactor while tests stay green
+
+- 4. Repeat until the feature meets its spec
+
+Your commit history is the only evidence for C2.4, and C2.4 is MUST PASS. Do not squash your history — if the ordering can't be seen, the criterion cannot be Met. A test committed first that asserts nothing capable of failing does not count.
+
+## Task 3.3 — GitHub Actions CI → .github/workflows/ci.yml
+
+- Triggers on push and pull request
+
+- Sets up the Python environment and installs dependencies
+
+- Runs linting (ruff or flake8)
+
+- Runs tests with coverage
+
+- Fails the build if coverage drops below 80%
+
+- Passes on a clean clone of your repository
+
+Also required: docs/ci-gate-evidence.md — proof your pipeline fails when it should. Break a test on purpose, push it, capture the failed run, then revert. A pipeline that runs tests but doesn't fail the build when they fail does not gate anything, and this is a common late discovery.
+
+```
+name: CI
+on: [push, pull_request]
+jobs:
+test:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- name: Set up Python
+uses: actions/setup-python@v4
+with:
+python-version: '3.10'
+# ... install, lint, test with coverage, enforce threshold
+```
+
+## Task 3.4 — Docker configuration
+
+- backend/Dockerfile — appropriate base image, dependencies installed, code copied, correct port exposed, proper CMD
+
+- docker-compose.yml in the project root — backend service, port mapping, environment variables, hot reload for development
+
+- README section explaining Docker usage
+
+
+The image must build from what is committed, with no manual steps, and the container must actually
+
+serve the API.
+
+## Task 3.5 — Documented refactor → docs/refactor-note.md
+
+This is not a general tidy-up checklist. You need one refactor you can prove was behaviour-preserving.
+
+- Name the code smell you're removing — duplication, long function, primitive obsession, whatever it is
+
+- o Commit the state before the refactor with the suite green
+
+- Perform the refactor
+
+- Commit the state after with the suite green
+
+- Write docs/refactor-note.md: the smell named, the two commit hashes, and confirmation that the public interface and observable behaviour are unchanged
+
+Do not edit tests to accommodate the refactor. The tests are what prove behaviour didn't change; changing them removes the evidence.
+
+Other cleanup — type hints, dead code, better names — is welcome, but it isn't what C2.6 assesses.
+
+## What You Submit
+
+- Coverage ≥ 80%, with meaningful assertions
+
+- One spec feature implemented with visible test-first commit history — MUST PASS
+
+- .github/workflows/ci.yml passing on a clean clone — MUST PASS
+
+- docs/ci-gate-evidence.md showing the pipeline failing on a broken test
+
+- backend/Dockerfile and docker-compose.yml that build and run
+
+- docs/refactor-note.md with named smell and before/after commits
+
+- Documentation and API reference updated to match the code after this module's changes
+
+- Your GitHub repository link, a brief summary, and any known issues
+
+## Verification
+
+pytest tests/ -v --cov=app --cov-report=term-missing docker-compose up --build git push origin main # confirm CI passes, then confirm it fails when it should
+
+
+## What This Module Is Judged Against
+
+Generated from PromptLab Criterion Set v2.1 (see the PromptLab Grading Rubric). Do not edit here — changes must be made in the rubric and regenerated.
+
+These are the exact criteria your assessor works through for this submission. Nothing is hidden and nothing is judged on impression. Read the right-hand column first — if your work matches one of those patterns, the criterion comes back Not Yet.
+
+The last two criteria below carry over from Module 2. They were judged provisionally then and receive their final judgment on this submission, against the final state of your code.
+
+## What is checked
+
+## What earns “Met”
+
+For each part of the feature, a commit
+
+containing a failing test precedes the
+
+commit containing its implementation. The
+
+Red-Green-Refactor rhythm is visible.
+
+Coverage ≥ 80% measured with pytest-cov.
+
+Every endpoint in your specs and API
+
+reference has at least one passing test for
+
+the success path and one for a documented
+
+failure case. Storage, utils and model
+
+validation are covered.
+
+A named code smell removed, the two
+
+commit hashes given, suite green on both
+
+sides, public interface and observable
+
+behaviour unchanged.
+
+Triggers on push and pull request, runs linting and tests with coverage, fails the build below 80%, passes on a clean clone, and demonstrably fails when a test is deliberately broken.
+
+The image builds from committed files with no manual steps. The container serves the API. docker-compose up --build brings up a working local environment, and the README explains Docker usage.
+
+Each spec has overview and goals, user stories with acceptance criteria, data model changes, API endpoints with request and response shapes, and specified error conditions and edge cases. Every endpoint
+
+## C2.4 — Your tests came first
+
+Evidence: Commit history for your Module 3 feature
+
+MUST PASS
+
+## C2.5 — Spec, tests and code line up
+
+Evidence: tests/, coverage report, specs/
+
+## Common mistakes to avoid
+
+- All tests in one commit after the code.
+
+- Squashed history, so ordering can't be seen.
+
+- Tests committed first that assert nothing capable of failing.
+
+- Endpoints built but not tested, or tested but not specified.
+
+- Coverage reached by tests that run code without asserting anything.
+
+- Failure cases specified but never tested.
+
+- Not naming the smell, or fixing something other than the one named.
+
+- Changing behaviour at the same time.
+
+- Editing tests to accommodate the refactor instead of using them to check it.
+
+- A workflow file with no successful run recorded.
+
+- A pipeline that runs tests but doesn't fail the build when they fail.
+
+- Passing locally but failing on a clean clone because config was never committed.
+
+- An image that builds but a container that exits or serves nothing.
+
+- A Dockerfile depending on files not in the repository.
+
+- A build needing undocumented manual steps.
+
+- Requirements that name a feature without describing behaviour.
+
+- Specifying the happy path and leaving errors unstated.
+
+## C2.6 — Your refactor changed nothing visible
+
+Evidence: docs/refactor- note.md, before/after commits
+
+## C2.7 — Your pipeline actually gates
+
+Evidence: .github/workflows/ci.yml, run logs, docs/ci-gate-evidence.md
+
+MUST PASS
+
+## C2.8 — Your container builds and runs
+
+Evidence: backend/Dockerfile, docker-compose.yml, build output
+
+## C2.1 — Your specs are specific enough
+
+Evidence: specs/prompt- versions.md, specs/tagging- system.md
+
+
+## What earns “Met”
+
+has at least one acceptance criterion you could write a test from directly.
+
+Docstrings on every function and class across all four source modules, with parameters, returns and exceptions matching the implementation. API reference documents every endpoint that exists — including PATCH and your Module 3 feature — with request examples, sample responses and error formats. README setup steps work on a clean clone.
+
+## What is checked
+
+## Provisional until Module 3
+
+## C2.2 — Your docs match your code
+
+Evidence: README.md, docstrings in models.py / api.py / storage.py / utils.py, docs/API_REFERENCE.md
+
+Provisional until Module 3
+
+## Common mistakes to avoid
+
+- Criteria you can't test, like “handles input correctly”.
+
+- API reference describing an earlier draft of the spec.
+
+- Docs not updated after Module 3's feature work.
+
+- Setup steps missing an environment variable or dependency.
+
+- Docstrings that restate the function name.
+
+
+## Where the Rules Live
+
+This file contains the tasks and criteria for this module only. Everything else lives in Getting Started:
+
+- Syllabus — grading policy, re-attempt policy, integrity and AI attribution.
+
+- Course & Project Guide — how mastery grading works in plain language, and how to do well.
+
+- PromptLab Grading Rubric — all 22 criteria across all five modules, if you want to see what's coming.
