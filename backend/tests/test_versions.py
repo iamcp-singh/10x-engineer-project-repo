@@ -225,3 +225,52 @@ class TestVersionAPI:
         data = response.json()
         assert data["versions"] == []
         assert data["total"] == 0
+
+    def test_get_specific_version(self):
+        """Test GET /prompts/{id}/versions/{version_id} returns specific version"""
+        # Create a prompt
+        response = self.client.post(
+            "/prompts",
+            json={"title": "Test", "content": "Content"},
+        )
+        prompt_id = response.json()["id"]
+
+        # Add a version
+        version = PromptVersion(
+            prompt_id=prompt_id,
+            title="Test",
+            content="Content",
+            version_number=1,
+        )
+        storage.add_prompt_version(version)
+
+        # Get the specific version
+        response = self.client.get(f"/prompts/{prompt_id}/versions/{version.id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == version.id
+        assert data["prompt_id"] == prompt_id
+        assert data["version_number"] == 1
+
+    def test_get_specific_version_prompt_not_found(self):
+        """Test GET /prompts/{id}/versions/{version_id} returns 404 if prompt not found"""
+        response = self.client.get("/prompts/bad-id/versions/version-id")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Prompt not found"
+
+    def test_get_specific_version_not_found(self):
+        """Test GET /prompts/{id}/versions/{version_id} returns 404 if version not found"""
+        # Create a prompt
+        response = self.client.post(
+            "/prompts",
+            json={"title": "Test", "content": "Content"},
+        )
+        prompt_id = response.json()["id"]
+
+        # Try to get non-existent version
+        response = self.client.get(f"/prompts/{prompt_id}/versions/bad-version-id")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Prompt version not found"
