@@ -33,7 +33,7 @@ class TestPromptVersionModel:
 
     def test_version_requires_prompt_id(self):
         """Test that prompt_id is required"""
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             PromptVersion(
                 title="Test",
                 content="Content",
@@ -42,7 +42,7 @@ class TestPromptVersionModel:
 
     def test_version_number_is_required(self):
         """Test that version_number is required"""
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             PromptVersion(
                 prompt_id="prompt-123",
                 title="Test",
