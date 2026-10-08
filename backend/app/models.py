@@ -52,6 +52,31 @@ class Prompt(PromptBase):
         from_attributes = True
 
 
+# ============== Prompt Version Models ==============
+
+
+class PromptVersionBase(BaseModel):
+    prompt_id: str
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+    description: str | None = Field(None, max_length=500)
+    collection_id: str | None = None
+
+
+class PromptVersion(PromptVersionBase):
+    id: str = Field(default_factory=generate_id)
+    created_at: datetime = Field(default_factory=get_current_time)
+    version_number: int
+
+    class Config:
+        from_attributes = True
+
+
+class PromptVersionList(BaseModel):
+    versions: list[PromptVersion]
+    total: int
+
+
 # ============== Collection Models ==============
 
 
