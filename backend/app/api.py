@@ -283,6 +283,48 @@ def get_prompt_version(prompt_id: str, version_id: str):
     return version
 
 
+@app.post("/prompts/{prompt_id}/versions/{version_id}/rollback", response_model=Prompt)
+def rollback_prompt_version(prompt_id: str, version_id: str):
+    """Rollback a prompt to a previous version.
+
+    Args:
+        prompt_id: The unique identifier of the prompt.
+        version_id: The unique identifier of the version to rollback to.
+
+    Returns:
+        Prompt: The updated prompt with content from the version.
+
+    Raises:
+        HTTPException: If the prompt or version is not found.
+    """
+    # Check if prompt exists
+    existing_prompt = storage.get_prompt(prompt_id)
+    if not existing_prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+
+    # Get the version to rollback to
+    version = storage.get_prompt_version(prompt_id, version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Prompt version not found")
+
+    # Create updated prompt with version's content but keep same ID and created_at
+    rolled_back_prompt = Prompt(
+        id=existing_prompt.id,
+        title=version.title,
+        content=version.content,
+        description=version.description,
+        collection_id=version.collection_id,
+        tags=existing_prompt.tags,  # Keep current tags
+        created_at=existing_prompt.created_at,
+        updated_at=get_current_time(),
+    )
+
+    # Update the prompt
+    storage.update_prompt(prompt_id, rolled_back_prompt)
+
+    return rolled_back_prompt
+
+
 # ============== Tagging Endpoints ==============
 
 
