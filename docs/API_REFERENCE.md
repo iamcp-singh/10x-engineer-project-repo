@@ -33,6 +33,7 @@ Timestamps are ISO 8601 strings (UTC), e.g. `"2024-01-01T00:00:00.000000"`.
   "content": "string",
   "description": "string or null",
   "collection_id": "string or null",
+  "tags": ["string"],           // list of tag strings
   "created_at": "2024-01-01T00:00:00.000000",
   "updated_at": "2024-01-01T00:00:00.000000"
 }
@@ -45,6 +46,7 @@ Constraints (from `PromptBase` and related models):
 - `description`: optional, max 500 characters
 - `collection_id`: optional; when provided in create/update/patch, must refer
   to an existing collection
+- `tags`: optional list of strings, max 50 tags per prompt, each tag 1–50 chars
 
 ### Collection
 
@@ -76,6 +78,30 @@ Constraints:
 ```json
 {
   "collections": [/* Collection objects */],
+  "total": 0
+}
+```
+
+### PromptVersion
+
+```json
+{
+  "id": "string",
+  "prompt_id": "string",
+  "title": "string",
+  "content": "string",
+  "description": "string or null",
+  "collection_id": "string or null",
+  "created_at": "2024-01-01T00:00:00.000000",
+  "version_number": 1
+}
+```
+
+### PromptVersionList
+
+```json
+{
+  "versions": [/* PromptVersion objects */],
   "total": 0
 }
 ```
@@ -143,6 +169,8 @@ Query parameters (all optional):
   matches this value are returned.
 - `search` (string): Case-insensitive search term applied to `title` and
   `description`.
+- `tags` (string): Comma-separated list of tags (e.g., `tags=review,backend`).
+  Returns only prompts that have ALL specified tags.
 
 ### Example
 
@@ -162,6 +190,12 @@ Search by text:
 
 ```bash
 curl "http://localhost:8000/prompts?search=review"
+```
+
+Filter by tags:
+
+```bash
+curl "http://localhost:8000/prompts?tags=review,backend"
 ```
 
 ### Success Response
@@ -704,5 +738,338 @@ curl -X DELETE "http://localhost:8000/collections/abcd1234-collection-id"
   ```json
   {
     "detail": "Collection not found"
+  }
+  ```
+
+---
+
+## POST /prompts/{id}/tags
+
+- **Method**: `POST`
+- **Path**: `/prompts/{id}/tags`
+- **Purpose**: Add tags to an existing prompt.
+- **Authentication**: Not required
+
+### Request
+
+Path parameters:
+
+- `id` (string): ID of the prompt.
+
+JSON body:
+
+```json
+{
+  "tags": ["review", "backend"]
+}
+```
+
+Constraints:
+
+- `tags`: required, non-empty list of strings
+- Each tag: 1–50 chars after trimming whitespace
+- Empty or whitespace-only tags are invalid
+
+### Example
+
+```bash
+curl -X POST "http://localhost:8000/prompts/9ce74dd8-8b3e-4c02-9f6d-123456789abc/tags" \
+  -H "Content-Type: application/json" \
+  -d '{"tags": ["review", "backend"]}'
+```
+
+### Success Response
+
+- **Status**: `200 OK`
+- **Body** (`Prompt`): Updated prompt with new tags merged (no duplicates)
+
+```json
+{
+  "id": "9ce74dd8-8b3e-4c02-9f6d-123456789abc",
+  "title": "Code Review Prompt",
+  "content": "Review the following code",
+  "description": "A prompt for AI code review",
+  "collection_id": null,
+  "tags": ["review", "backend"],
+  "created_at": "2024-01-01T00:00:00.000000",
+  "updated_at": "2024-01-01T00:00:01.000000"
+}
+```
+
+### Error Responses
+
+- **404 Not Found** – prompt does not exist.
+
+  ```json
+  {
+    "detail": "Prompt not found"
+  }
+  ```
+
+- **422 Unprocessable Entity** – invalid tags (empty, whitespace-only, too long)
+
+---
+
+## DELETE /prompts/{id}/tags
+
+- **Method**: `DELETE`
+- **Path**: `/prompts/{id}/tags`
+- **Purpose**: Remove tags from an existing prompt.
+- **Authentication**: Not required
+
+### Request
+
+Path parameters:
+
+- `id` (string): ID of the prompt.
+
+JSON body:
+
+```json
+{
+  "tags": ["backend"]
+}
+```
+
+Constraints:
+
+- `tags`: required, non-empty list of strings
+
+Behavior:
+
+- Tags present in the request are removed from the prompt
+- Tags not present on the prompt are ignored (no error)
+- Returns `200` even if no tags were actually removed
+
+### Example
+
+```bash
+curl -X DELETE "http://localhost:8000/prompts/9ce74dd8-8b3e-4c02-9f6d-123456789abc/tags" \
+  -H "Content-Type: application/json" \
+  -d '{"tags": ["backend"]}'
+```
+
+### Success Response
+
+- **Status**: `200 OK`
+- **Body** (`Prompt`): Updated prompt with specified tags removed
+
+```json
+{
+  "id": "9ce74dd8-8b3e-4c02-9f6d-123456789abc",
+  "title": "Code Review Prompt",
+  "content": "Review the following code",
+  "description": "A prompt for AI code review",
+  "collection_id": null,
+  "tags": ["review"],
+  "created_at": "2024-01-01T00:00:00.000000",
+  "updated_at": "2024-01-01T00:05:00.000000"
+}
+```
+
+### Error Responses
+
+- **404 Not Found** – prompt does not exist.
+
+  ```json
+  {
+    "detail": "Prompt not found"
+  }
+  ```
+
+- **422 Unprocessable Entity** – invalid tags list
+
+---
+
+## GET /prompts/{id}/versions
+
+- **Method**: `GET`
+- **Path**: `/prompts/{id}/versions`
+- **Purpose**: List all versions of a prompt (newest first).
+- **Authentication**: Not required
+
+### Request
+
+Path parameters:
+
+- `id` (string): ID of the prompt.
+
+### Example
+
+```bash
+curl "http://localhost:8000/prompts/9ce74dd8-8b3e-4c02-9f6d-123456789abc/versions"
+```
+
+### Success Response
+
+- **Status**: `200 OK`
+- **Body** (`PromptVersionList`):
+
+```json
+{
+  "versions": [
+    {
+      "id": "ver-2",
+      "prompt_id": "9ce74dd8-8b3e-4c02-9f6d-123456789abc",
+      "title": "Updated Title",
+      "content": "Updated content",
+      "description": "Updated description",
+      "collection_id": null,
+      "created_at": "2024-01-01T00:01:00.000000",
+      "version_number": 2
+    },
+    {
+      "id": "ver-1",
+      "prompt_id": "9ce74dd8-8b3e-4c02-9f6d-123456789abc",
+      "title": "Initial Title",
+      "content": "Initial content",
+      "description": "First version",
+      "collection_id": null,
+      "created_at": "2024-01-01T00:00:00.000000",
+      "version_number": 1
+    }
+  ],
+  "total": 2
+}
+```
+
+Notes:
+
+- Versions are ordered newest first by `created_at`
+- Version 1 is created automatically when a prompt is created
+- Versions are created on create, PUT, PATCH, and rollback operations
+
+### Error Responses
+
+- **404 Not Found** – prompt does not exist.
+
+  ```json
+  {
+    "detail": "Prompt not found"
+  }
+  ```
+
+---
+
+## GET /prompts/{id}/versions/{version_id}
+
+- **Method**: `GET`
+- **Path**: `/prompts/{id}/versions/{version_id}`
+- **Purpose**: Retrieve a specific version of a prompt.
+- **Authentication**: Not required
+
+### Request
+
+Path parameters:
+
+- `id` (string): ID of the prompt.
+- `version_id` (string): ID of the version.
+
+### Example
+
+```bash
+curl "http://localhost:8000/prompts/9ce74dd8-8b3e-4c02-9f6d-123456789abc/versions/ver-1"
+```
+
+### Success Response
+
+- **Status**: `200 OK`
+- **Body** (`PromptVersion`):
+
+```json
+{
+  "id": "ver-1",
+  "prompt_id": "9ce74dd8-8b3e-4c02-9f6d-123456789abc",
+  "title": "Initial Title",
+  "content": "Initial content",
+  "description": "First version",
+  "collection_id": null,
+  "created_at": "2024-01-01T00:00:00.000000",
+  "version_number": 1
+}
+```
+
+### Error Responses
+
+- **404 Not Found** – prompt does not exist.
+
+  ```json
+  {
+    "detail": "Prompt not found"
+  }
+  ```
+
+- **404 Not Found** – version does not exist for this prompt.
+
+  ```json
+  {
+    "detail": "Prompt version not found"
+  }
+  ```
+
+---
+
+## POST /prompts/{id}/versions/{version_id}/rollback
+
+- **Method**: `POST`
+- **Path**: `/prompts/{id}/versions/{version_id}/rollback`
+- **Purpose**: Roll back a prompt to a previous version.
+- **Authentication**: Not required
+
+### Request
+
+Path parameters:
+
+- `id` (string): ID of the prompt.
+- `version_id` (string): ID of the version to roll back to.
+
+No request body.
+
+### Behavior
+
+- Restores the prompt's `title`, `content`, `description`, and `collection_id` from the specified version
+- Keeps the original prompt `id` and `created_at`
+- Updates `updated_at` to current time
+- Creates a new version snapshot representing the rolled-back state
+
+### Example
+
+```bash
+curl -X POST "http://localhost:8000/prompts/9ce74dd8-8b3e-4c02-9f6d-123456789abc/versions/ver-1/rollback"
+```
+
+### Success Response
+
+- **Status**: `200 OK`
+- **Body** (`Prompt`):
+
+```json
+{
+  "id": "9ce74dd8-8b3e-4c02-9f6d-123456789abc",
+  "title": "Initial Title",
+  "content": "Initial content",
+  "description": "First version",
+  "collection_id": null,
+  "tags": [],
+  "created_at": "2024-01-01T00:00:00.000000",
+  "updated_at": "2024-01-01T00:10:00.000000"
+}
+```
+
+### Error Responses
+
+- **404 Not Found** – prompt does not exist.
+
+  ```json
+  {
+    "detail": "Prompt not found"
+  }
+  ```
+
+- **404 Not Found** – version does not exist for this prompt.
+
+  ```json
+  {
+    "detail": "Prompt version not found"
   }
   ```
