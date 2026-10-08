@@ -3,9 +3,11 @@
 from datetime import datetime
 
 import pytest
+from fastapi.testclient import TestClient
 
+from app.api import app
 from app.models import Prompt, PromptVersion
-from app.storage import Storage
+from app.storage import Storage, storage
 
 
 class TestPromptVersionModel:
@@ -140,3 +142,86 @@ class TestVersionStorage:
         result = storage.get_prompt_version(prompt.id, "nonexistent")
         
         assert result is None
+
+
+class TestVersionAPI:
+    """Test version API endpoints"""
+
+    def setup_method(self):
+        """Clear storage before each test"""
+        storage.clear()
+        self.client = TestClient(app)
+
+    def test_list_versions_for_prompt(self):
+        """Test GET /prompts/{id}/versions returns all versions"""
+        # Create a prompt
+        response = self.client.post(
+            "/prompts",
+            json={
+                "title": "Test Prompt",
+                "content": "Initial content",
+                "description": "Test description",
+            },
+        )
+        assert response.status_code == 201
+        prompt_id = response.json()["id"]
+
+        # Manually add versions (in real implementation, these would be auto-created)
+        v1 = PromptVersion(
+            prompt_id=prompt_id,
+            title="Test Prompt",
+            content="Initial content",
+            description="Test description",
+            collection_id=None,
+            version_number=1,
+        )
+        v2 = PromptVersion(
+            prompt_id=prompt_id,
+            title="Updated Prompt",
+            content="Updated content",
+            description="Test description",
+            collection_id=None,
+            version_number=2,
+        )
+        storage.add_prompt_version(v1)
+        storage.add_prompt_version(v2)
+
+        # Get versions
+        response = self.client.get(f"/prompts/{prompt_id}/versions")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "versions" in data
+        assert "total" in data
+        assert data["total"] == 2
+        assert len(data["versions"]) == 2
+        # Should be newest first
+        assert data["versions"][0]["version_number"] == 2
+        assert data["versions"][1]["version_number"] == 1
+
+    def test_list_versions_prompt_not_found(self):
+        """Test GET /prompts/{id}/versions returns 404 for non-existent prompt"""
+        response = self.client.get("/prompts/nonexistent-id/versions")
+        
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Prompt not found"
+
+    def test_list_versions_empty(self):
+        """Test GET /prompts/{id}/versions returns empty list when no versions"""
+        # Create a prompt
+        response = self.client.post(
+            "/prompts",
+            json={
+                "title": "Test Prompt",
+                "content": "Content",
+            },
+        )
+        prompt_id = response.json()["id"]
+
+        # Get versions (none exist yet)
+        response = self.client.get(f"/prompts/{prompt_id}/versions")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["versions"] == []
+        assert data["total"] == 0
