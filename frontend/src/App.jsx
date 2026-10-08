@@ -1,122 +1,195 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import { Layout, Sidebar } from './components/layout';
+import { PromptList, PromptDetail, PromptForm } from './components/prompts';
+import { CollectionForm } from './components/collections';
+import { Button, Modal, SearchBar } from './components/shared';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [prompts, setPrompts] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Modal states
+  const [showPromptForm, setShowPromptForm] = useState(false);
+  const [showCollectionForm, setShowCollectionForm] = useState(false);
+  const [showPromptDetail, setShowPromptDetail] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState(null);
+  const [selectedPromptId, setSelectedPromptId] = useState(null);
+
+  useEffect(() => {
+    fetchPrompts();
+    fetchCollections();
+  }, [selectedCollection, searchQuery]);
+
+  const fetchPrompts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let url = 'http://localhost:8000/prompts';
+      const params = new URLSearchParams();
+      
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+      if (selectedCollection) {
+        params.append('collection_id', selectedCollection);
+      }
+      
+      if (params.toString()) {
+        url += '?' + params.toString();
+      }
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to load prompts');
+      }
+      
+      const data = await response.json();
+      setPrompts(data.prompts || []);
+    } catch (err) {
+      setError("Couldn't load prompts. Try refreshing.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCollections = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/collections');
+      if (response.ok) {
+        const data = await response.json();
+        setCollections(data.collections || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch collections:', err);
+    }
+  };
+
+  const handleCreatePrompt = () => {
+    setEditingPrompt(null);
+    setShowPromptForm(true);
+  };
+
+  const handleEditPrompt = (prompt) => {
+    setEditingPrompt(prompt);
+    setShowPromptDetail(false);
+    setShowPromptForm(true);
+  };
+
+  const handlePromptSuccess = () => {
+    setShowPromptForm(false);
+    setEditingPrompt(null);
+    fetchPrompts();
+  };
+
+  const handleCollectionSuccess = () => {
+    setShowCollectionForm(false);
+    fetchCollections();
+  };
+
+  const handleSelectPrompt = (promptId) => {
+    setSelectedPromptId(promptId);
+    setShowPromptDetail(true);
+  };
+
+  const handleDeletePrompt = () => {
+    setShowPromptDetail(false);
+    setSelectedPromptId(null);
+    fetchPrompts();
+  };
+
+  const handleCloseDetail = () => {
+    setShowPromptDetail(false);
+    setSelectedPromptId(null);
+  };
+
+  const getEmptyMessage = () => {
+    if (searchQuery) {
+      return `No prompts match '${searchQuery}'. Try a different search.`;
+    }
+    if (selectedCollection) {
+      return 'This collection is empty.';
+    }
+    return "No prompts yet. Create your first prompt to get started!";
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <Layout
+      sidebar={
+        <Sidebar
+          collections={collections}
+          selectedId={selectedCollection}
+          onSelectCollection={setSelectedCollection}
+        />
+      }
+    >
+      {/* Action Bar */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <SearchBar onSearch={setSearchQuery} />
+        <div className="flex gap-2">
+          <Button onClick={() => setShowCollectionForm(true)} variant="secondary">
+            New Collection
+          </Button>
+          <Button onClick={handleCreatePrompt}>
+            New Prompt
+          </Button>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </div>
 
-      <div className="ticks"></div>
+      {/* Prompt List or Detail View */}
+      {showPromptDetail ? (
+        <PromptDetail
+          promptId={selectedPromptId}
+          onEdit={handleEditPrompt}
+          onDelete={handleDeletePrompt}
+          onClose={handleCloseDetail}
+        />
+      ) : (
+        <PromptList
+          prompts={prompts}
+          onSelectPrompt={handleSelectPrompt}
+          loading={loading}
+          error={error}
+          emptyMessage={getEmptyMessage()}
+        />
+      )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {/* Prompt Form Modal */}
+      <Modal
+        isOpen={showPromptForm}
+        onClose={() => {
+          setShowPromptForm(false);
+          setEditingPrompt(null);
+        }}
+        title={editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
+      >
+        <PromptForm
+          promptId={editingPrompt?.id}
+          onSuccess={handlePromptSuccess}
+          onCancel={() => {
+            setShowPromptForm(false);
+            setEditingPrompt(null);
+          }}
+        />
+      </Modal>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* Collection Form Modal */}
+      <Modal
+        isOpen={showCollectionForm}
+        onClose={() => setShowCollectionForm(false)}
+        title="Create New Collection"
+      >
+        <CollectionForm
+          onSuccess={handleCollectionSuccess}
+          onCancel={() => setShowCollectionForm(false)}
+        />
+      </Modal>
+    </Layout>
+  );
 }
 
-export default App
+export default App;
