@@ -354,3 +354,69 @@ class TestVersionAPI:
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Prompt version not found"
+
+    def test_create_prompt_auto_versions(self):
+        """Test that creating a prompt auto-creates version 1"""
+        response = self.client.post(
+            "/prompts",
+            json={
+                "title": "Test Prompt",
+                "content": "Test content",
+                "description": "Test",
+            },
+        )
+        prompt_id = response.json()["id"]
+
+        # Check versions were created
+        versions = storage.get_prompt_versions(prompt_id)
+        assert len(versions) == 1
+        assert versions[0].version_number == 1
+        assert versions[0].title == "Test Prompt"
+
+    def test_update_prompt_auto_versions(self):
+        """Test that updating a prompt auto-creates a new version"""
+        # Create
+        response = self.client.post(
+            "/prompts",
+            json={"title": "Original", "content": "Original content"},
+        )
+        prompt_id = response.json()["id"]
+
+        # Update
+        response = self.client.put(
+            f"/prompts/{prompt_id}",
+            json={
+                "title": "Updated",
+                "content": "Updated content",
+                "collection_id": None,
+                "tags": [],
+            },
+        )
+
+        # Check versions
+        versions = storage.get_prompt_versions(prompt_id)
+        assert len(versions) == 2
+        assert versions[0].version_number == 2
+        assert versions[0].title == "Updated"
+        assert versions[1].version_number == 1
+
+    def test_patch_prompt_auto_versions(self):
+        """Test that patching a prompt auto-creates a new version"""
+        # Create
+        response = self.client.post(
+            "/prompts",
+            json={"title": "Original", "content": "Original content"},
+        )
+        prompt_id = response.json()["id"]
+
+        # Patch
+        response = self.client.patch(
+            f"/prompts/{prompt_id}",
+            json={"title": "Patched"},
+        )
+
+        # Check versions
+        versions = storage.get_prompt_versions(prompt_id)
+        assert len(versions) == 2
+        assert versions[0].version_number == 2
+        assert versions[0].title == "Patched"
