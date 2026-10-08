@@ -16,6 +16,7 @@ from app.models import (
     PromptList,
     PromptPatch,
     PromptUpdate,
+    PromptVersion,
     PromptVersionList,
     get_current_time,
 )
@@ -253,6 +254,33 @@ def list_prompt_versions(prompt_id: str):
     versions = storage.get_prompt_versions(prompt_id)
 
     return PromptVersionList(versions=versions, total=len(versions))
+
+
+@app.get("/prompts/{prompt_id}/versions/{version_id}", response_model=PromptVersion)
+def get_prompt_version(prompt_id: str, version_id: str):
+    """Get a specific version of a prompt.
+
+    Args:
+        prompt_id: The unique identifier of the prompt.
+        version_id: The unique identifier of the version.
+
+    Returns:
+        PromptVersion: The requested version.
+
+    Raises:
+        HTTPException: If the prompt or version is not found.
+    """
+    # Check if prompt exists
+    prompt = storage.get_prompt(prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+
+    # Get the specific version
+    version = storage.get_prompt_version(prompt_id, version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Prompt version not found")
+
+    return version
 
 
 # ============== Tagging Endpoints ==============
