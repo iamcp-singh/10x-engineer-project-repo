@@ -16,6 +16,7 @@ from app.models import (
     PromptList,
     PromptPatch,
     PromptUpdate,
+    PromptVersionList,
     get_current_time,
 )
 from app.storage import storage
@@ -225,6 +226,33 @@ def delete_prompt(prompt_id: str):
     """
     if not storage.delete_prompt(prompt_id):
         raise HTTPException(status_code=404, detail="Prompt not found")
+
+
+# ============== Version Endpoints ==============
+
+
+@app.get("/prompts/{prompt_id}/versions", response_model=PromptVersionList)
+def list_prompt_versions(prompt_id: str):
+    """List all versions for a prompt.
+
+    Args:
+        prompt_id: The unique identifier of the prompt.
+
+    Returns:
+        PromptVersionList: All versions for the prompt, newest first.
+
+    Raises:
+        HTTPException: If the prompt is not found.
+    """
+    # Check if prompt exists
+    prompt = storage.get_prompt(prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+
+    # Get all versions for this prompt
+    versions = storage.get_prompt_versions(prompt_id)
+
+    return PromptVersionList(versions=versions, total=len(versions))
 
 
 # ============== Tagging Endpoints ==============
