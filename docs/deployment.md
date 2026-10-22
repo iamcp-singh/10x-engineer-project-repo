@@ -51,10 +51,20 @@ Open your browser to **http://localhost:5173**
 
 ## Environment Variables
 
-**No environment variables required.**
+### Backend
 
-- Backend uses in-memory storage
-- Frontend connects to `http://localhost:8000` by default
+No environment variables required.
+
+### Frontend
+
+**Default**: Frontend connects to `http://localhost:8000`
+
+**To use different backend URL**:
+1. Create file `frontend/.env.local`
+2. Add: `VITE_API_URL=http://your-backend-url`
+3. Restart frontend: `npm run dev`
+
+**Where this is configured**: See `frontend/src/api/client.js` line 1
 
 ---
 

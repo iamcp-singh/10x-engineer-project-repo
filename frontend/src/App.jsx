@@ -3,7 +3,7 @@ import { Layout, Sidebar } from './components/layout';
 import { PromptList, PromptDetail, PromptForm } from './components/prompts';
 import { CollectionForm } from './components/collections';
 import { Button, Modal, SearchBar } from './components/shared';
-import { getPrompts, getCollections } from './api';
+import { getPrompts, getCollections, deleteCollection } from './api';
 
 function App() {
   const [prompts, setPrompts] = useState([]);
@@ -90,6 +90,14 @@ function App() {
     setSelectedPromptId(null);
   };
 
+  const handleDeleteCollection = async (id) => {
+    if (selectedCollection === id) {
+      setSelectedCollection(null);
+    }
+    await deleteCollection(id);
+    fetchCollections();
+  };
+
   const getEmptyMessage = () => {
     if (searchQuery) {
       return `No prompts match '${searchQuery}'. Try a different search.`;
@@ -107,6 +115,7 @@ function App() {
           collections={collections}
           selectedId={selectedCollection}
           onSelectCollection={setSelectedCollection}
+          onDeleteCollection={handleDeleteCollection}
         />
       }
     >
